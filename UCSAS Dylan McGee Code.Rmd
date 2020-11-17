@@ -1,0 +1,117 @@
+---
+title: "Cluster TEST"
+author: "Dylan McGee"
+date: "9/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## FIRST CLUSTER RUN
+##import dataset/add libraries
+```{r}
+library(tidyverse)
+library(fpc)
+master_sheet <-read.csv("data/Test Run 9.csv")
+```
+
+#Create a fererence dataframe by removing all non numeric variables from main dataset into its own seperate dataset
+```{r}
+references <- master_sheet[1:3]
+cluster_master_sheet <- master_sheet[4:14]
+```
+
+
+#Making Correlations
+```{r}
+library(corrplot)
+library(gplots)
+
+correlation <- cor(cluster_master_sheet)
+
+corrplot(correlation, tl.col = "black")
+```
+#Cleaning up Correlation
+```{r}
+library(ggplot2)
+corrplot(correlation, method = "shade", shade.col = NA, tl.col = "black") 
+```
+#Create K Means Cluster 
+```{r}
+scaled_master_sheet <-scale(cluster_master_sheet)
+wss <- (nrow(scaled_master_sheet)-1)*sum(apply(scaled_master_sheet,2,var))
+for (i in 2:20) wss[i] <- sum(kmeans(scaled_master_sheet,
+           centers = i)$withinss)
+plot(1:20, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares", main = "Elbow Plot for No. of Clusters")
+```
+
+```{r}
+set.seed(500)
+fit1 <- kmeans(cluster_master_sheet, 6, nstart=25)
+
+library(cluster)
+set.seed(500)
+clusplot(cluster_master_sheet, fit1$cluster, color = TRUE, shade = TRUE, labels = 2, lines=0, main = "K Means Plot")
+```
+
+
+
+
+```{r}
+library(plotly)
+fig <- plot_ly(cluster_master_sheet, x= ~ K., y = ~GB., z = ~FB., color = ~fit1$cluster)
+fig
+```
+
+#Creating Seperate Data Frames for each Cluster
+```{r}
+cluster_master_sheet <- data.frame(cluster_master_sheet, fit1$cluster)
+
+cluster1 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='1'),]
+cluster2 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='2'),]
+cluster3 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='3'),]
+cluster4 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='4'),]
+cluster5 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='5'),]
+cluster6 <- cluster_master_sheet[which(cluster_master_sheet$fit1.cluster=='6'),]
+```
+
+summary(cluster1)
+summary(cluster2)
+summary(cluster3)
+summary(cluster4)
+summary(cluster5)
+summary(cluster6)
+
+
+#Merging Clusters with reference data
+```{r}
+references <- data.frame(references, fit1$cluster)
+
+players1 <- references[which(references$fit1.cluster=='1'),]
+players2 <- references[which(references$fit1.cluster=='2'),]
+players3 <- references[which(references$fit1.cluster=='3'),]
+players4 <- references[which(references$fit1.cluster=='4'),]
+players5 <- references[which(references$fit1.cluster=='5'),]
+players6 <- references[which(references$fit1.cluster=='6'),]
+
+
+clusters <-rbind(players1,players2,players3,players4,players5, players6)
+write.csv(clusters, file = "Clustered Results 12.csv")
+```
+
+```{r}
+summary1<-summary(cluster1)
+summary2<-summary(cluster2)
+summary3<-summary(cluster3)
+summary4<-summary(cluster4)
+summary5<-summary(cluster5)
+summary6<-summary(cluster6)
+
+
+summaries <- rbind(summary1, summary2, summary3, summary4, summary5, summary6)
+
+write.csv(summaries, file = "Cluster Summaries 12.csv")
+```
